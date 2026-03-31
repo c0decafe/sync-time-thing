@@ -11,7 +11,7 @@ devenv.local.yaml
 data/
 coverage.out
 *.out
-sync-time-thing
+/sync-time-thing
 
 # pre-commit
 .pre-commit-config.yaml
