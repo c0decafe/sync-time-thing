@@ -18,7 +18,7 @@ runs:
         github_access_token: ${{ inputs.github-token }}
 
     - name: Enable Nix binary cache
-      uses: DeterminateSystems/magic-nix-cache-action@v13
+      uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a
 
     - name: Install devenv
       shell: bash
