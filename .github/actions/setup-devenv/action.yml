@@ -1,5 +1,5 @@
 name: Setup Nix and devenv
-description: Install Nix, enable the Nix binary cache, and install the devenv CLI
+description: Install Nix and the devenv CLI on the default GitHub runner
 
 inputs:
   github-token:
@@ -16,9 +16,6 @@ runs:
       uses: cachix/install-nix-action@v31.10.3
       with:
         github_access_token: ${{ inputs.github-token }}
-
-    - name: Enable Nix binary cache
-      uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a
 
     - name: Install devenv
       shell: bash
