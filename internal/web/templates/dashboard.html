@@ -1,0 +1,56 @@
+{{define "dashboard"}}
+{{template "header" .}}
+<section class="grid two-col">
+  <article class="card">
+    <h2>Connection</h2>
+    <p class="card-intro">This deployment manages one Syncthing instance and evaluates rules every minute.</p>
+    <p><strong>Timezone:</strong> {{.Settings.Timezone}}</p>
+    <p><strong>Syncthing URL:</strong> {{if .Settings.SyncthingURL}}{{.Settings.SyncthingURL}}{{else}}Not configured{{end}}</p>
+    <p><strong>Devices loaded:</strong> {{len .Devices}}</p>
+    <p><strong>Folders loaded:</strong> {{len .Folders}}</p>
+    {{if .Settings.SyncthingURL}}
+      {{if .ConnectionError}}
+      <p class="field-help">Saved rules remain in place, but device and folder choices will not refresh until Syncthing reconnects.</p>
+      {{else}}
+      <p class="status-good">Syncthing is connected and catalog data is current.</p>
+      {{end}}
+    {{else}}
+    <p class="field-help">Start by saving the Syncthing URL, API key, and scheduler timezone.</p>
+    <p><a href="/settings">Open settings</a></p>
+    {{end}}
+  </article>
+  <article class="card">
+    <h2>Rules</h2>
+    <p><strong>Total rules:</strong> {{len .Rules}}</p>
+    <ul>
+      {{range .Rules}}
+      <li>{{.Rule.Name}} &mdash; {{.Rule.Action}} {{.Rule.TargetKind}} ({{.Rule.TargetName}})</li>
+      {{else}}
+      <li>No rules yet. Create your first pause or resume rule from the Rules page.</li>
+      {{end}}
+    </ul>
+    <p><a href="/rules">Manage rules</a></p>
+  </article>
+</section>
+<section class="card">
+  <h2>Recent runs</h2>
+  <p class="field-help">Run timestamps include their timezone suffix for quick verification.</p>
+  <table>
+    <thead><tr><th>Rule</th><th>Status</th><th>Scheduled</th><th>Executed</th><th>Message</th></tr></thead>
+    <tbody>
+      {{range .Runs}}
+      <tr>
+        <td>{{.RuleName}}</td>
+        <td>{{.Status}}</td>
+        <td>{{formatTime .ScheduledFor}}</td>
+        <td>{{formatTime .ExecutedAt}}</td>
+        <td>{{.Message}}</td>
+      </tr>
+      {{else}}
+      <tr><td colspan="5">No executions yet.</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "footer" .}}
+{{end}}

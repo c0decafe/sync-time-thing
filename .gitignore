@@ -1,0 +1,17 @@
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# Local env / runtime
+.env
+data/
+coverage.out
+*.out
+sync-time-thing
+
+# pre-commit
+.pre-commit-config.yaml

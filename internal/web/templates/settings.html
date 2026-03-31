@@ -1,0 +1,26 @@
+{{define "settings"}}
+{{template "header" .}}
+<section class="card">
+  <h2>Settings</h2>
+  <p class="card-intro">Save a Syncthing URL and API key to validate connectivity and load folders and devices for rule targeting.</p>
+  <form action="/settings" method="post" class="stack">
+    <label>
+      Syncthing URL
+      <input type="url" name="syncthing_url" value="{{.Settings.SyncthingURL}}" placeholder="http://syncthing:8384" autocomplete="url">
+      <span class="field-help">Example: <code>http://syncthing:8384</code></span>
+    </label>
+    <label>
+      Syncthing API key
+      <input type="password" name="syncthing_api_key" value="{{.Settings.SyncthingAPIKey}}" autocomplete="off" spellcheck="false">
+      <span class="field-help">Use the GUI API key from Syncthing: Actions &rarr; Settings &rarr; General. Saving also tests the connection.</span>
+    </label>
+    <label>
+      App timezone <span class="required">*</span>
+      <input type="text" name="timezone" value="{{.Settings.Timezone}}" placeholder="UTC" required>
+      <span class="field-help">Used for every cron preview and execution window. Example: <code>UTC</code> or <code>Europe/London</code>.</span>
+    </label>
+    <button type="submit">Save settings</button>
+  </form>
+</section>
+{{template "footer" .}}
+{{end}}

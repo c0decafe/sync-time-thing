@@ -1,0 +1,141 @@
+name: Publish SyncTimeThing prod container
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-ghcr-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    name: Build and push SyncTimeThing image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable Nix binary cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Install devenv
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix profile install --accept-flake-config github:cachix/devenv/latest
+
+      - name: Compute image metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          repo="${GITHUB_REPOSITORY##*/}"
+          repo="${repo,,}"
+          image="${REGISTRY}/${owner}/${repo}"
+
+          declare -a tags
+          tags=("sha-${GITHUB_SHA::12}")
+
+          default_branch="${{ github.event.repository.default_branch }}"
+          if [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" == "${default_branch}" ]]; then
+            tags+=("latest")
+          fi
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            raw="${GITHUB_REF_NAME}"
+            tags+=("${raw}")
+
+            if [[ "${raw}" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              tags+=(
+                "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+                "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+                "${BASH_REMATCH[1]}"
+              )
+            fi
+          fi
+
+          mapfile -t unique_tags < <(printf '%s\n' "${tags[@]}" | awk 'NF && !seen[$0]++')
+
+          {
+            echo "owner=${owner}"
+            echo "repo=${repo}"
+            echo "image=${image}"
+            echo "registry_base=docker://${REGISTRY}/${owner}/"
+            echo "tags<<EOF"
+            printf '%s\n' "${unique_tags[@]}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build prod container once
+        shell: bash
+        run: |
+          set -euo pipefail
+          devenv --no-tui container build \
+            --option containers.prod.name:string "${{ steps.meta.outputs.repo }}" \
+            --option containers.prod.version:string "buildcache" \
+            prod
+
+      - name: Push prod container tags
+        shell: bash
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.repo }}
+          REGISTRY_BASE: ${{ steps.meta.outputs.registry_base }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r tag; do
+            [[ -n "${tag}" ]] || continue
+
+            devenv --no-tui container copy \
+              --registry "${REGISTRY_BASE}" \
+              --option containers.prod.name:string "${IMAGE_NAME}" \
+              --option containers.prod.version:string "${tag}" \
+              prod
+          done <<< "${TAGS}"
+
+      - name: Write workflow summary
+        shell: bash
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          {
+            echo "### Published SyncTimeThing GHCR image"
+            echo
+            echo "Image base: \`${IMAGE}\`"
+            echo
+            echo "Tags:"
+            while IFS= read -r tag; do
+              [[ -n "${tag}" ]] || continue
+              echo "- \`${IMAGE}:${tag}\`"
+            done <<< "${TAGS}"
+          } >> "${GITHUB_STEP_SUMMARY}"

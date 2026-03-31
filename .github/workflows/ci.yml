@@ -1,0 +1,73 @@
+name: SyncTimeThing CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run devenv test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable Nix binary cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Install devenv
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix profile install --accept-flake-config github:cachix/devenv/latest
+
+      - name: Run full test harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          devenv --no-tui test
+
+  build-prod:
+    name: Build prod container
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable Nix binary cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Install devenv
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix profile install --accept-flake-config github:cachix/devenv/latest
+
+      - name: Build prod image
+        shell: bash
+        run: |
+          set -euo pipefail
+          devenv --no-tui container build prod

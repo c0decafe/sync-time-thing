@@ -1,0 +1,80 @@
+{{define "rules"}}
+{{template "header" .}}
+<section class="grid two-col">
+  <article class="card">
+    <h2>{{if .Editing}}Edit rule{{else}}Create rule{{end}}</h2>
+    <p class="card-intro">Rules use standard five-field cron syntax and run in the app timezone: <strong>{{.Settings.Timezone}}</strong>.</p>
+    {{if .ConnectionError}}
+    <p class="field-help">Global rules can still be managed now, but device and folder targets cannot be fully validated until Syncthing reconnects.</p>
+    {{end}}
+    <form action="/rules" method="post" class="stack">
+      {{if .Editing}}<input type="hidden" name="id" value="{{.RuleForm.ID}}">{{end}}
+      <label>
+        Name
+        <input type="text" name="name" value="{{.RuleForm.Name}}" required>
+      </label>
+      <label>
+        Cron schedule
+        <input type="text" name="schedule" value="{{.RuleForm.Schedule}}" placeholder="0 22 * * *" required>
+        <span class="field-help">Use standard five-field cron syntax: minute hour day-of-month month day-of-week. Example: <code>0 22 * * *</code> runs every day at 22:00.</span>
+      </label>
+      <label>Action
+        <select name="action">
+          <option value="pause" {{if eq .RuleForm.Action "pause"}}selected{{end}}>pause</option>
+          <option value="resume" {{if eq .RuleForm.Action "resume"}}selected{{end}}>resume</option>
+        </select>
+      </label>
+      <label>Target kind
+        <select name="target_kind">
+          <option value="global" {{if eq .RuleForm.TargetKind "global"}}selected{{end}}>global</option>
+          <option value="device" {{if eq .RuleForm.TargetKind "device"}}selected{{end}}>device</option>
+          <option value="folder" {{if eq .RuleForm.TargetKind "folder"}}selected{{end}}>folder</option>
+        </select>
+        <span class="field-help">Use <strong>global</strong> for every device, or narrow the rule to one device or one folder.</span>
+      </label>
+      <label>Target id
+        <select name="target_id">
+          <option value="">(global target)</option>
+          <optgroup label="Devices">
+            {{range .Devices}}<option value="{{.ID}}" {{if eq $.RuleForm.TargetID .ID}}selected{{end}}>{{.Name}} ({{.ID}})</option>{{end}}
+          </optgroup>
+          <optgroup label="Folders">
+            {{range .Folders}}<option value="{{.ID}}" {{if eq $.RuleForm.TargetID .ID}}selected{{end}}>{{.Label}} ({{.ID}})</option>{{end}}
+          </optgroup>
+        </select>
+        <span class="field-help">Device and folder targets come from the latest Syncthing catalog refresh.</span>
+      </label>
+      <label class="checkbox"><input type="checkbox" name="enabled" {{if .RuleForm.Enabled}}checked{{end}}> Enabled</label>
+      <div class="actions">
+        <button type="submit">{{if .Editing}}Update rule{{else}}Create rule{{end}}</button>
+        {{if .Editing}}<a class="button secondary" href="/rules">Cancel</a>{{end}}
+      </div>
+    </form>
+  </article>
+  <article class="card">
+    <h2>Rules</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Target</th><th>Preview</th><th>Actions</th></tr></thead>
+      <tbody>
+        {{range .Rules}}
+        <tr>
+          <td>{{.Rule.Name}}</td>
+          <td>{{.Rule.TargetKind}} / {{.Rule.TargetName}}</td>
+          <td>{{range .Preview}}<div>{{.}}</div>{{else}}<div>-</div>{{end}}</td>
+          <td>
+            <a href="/rules?edit={{.Rule.ID}}">Edit</a>
+            <form action="/rules/delete" method="post" class="inline-form">
+              <input type="hidden" name="id" value="{{.Rule.ID}}">
+              <button type="submit" onclick="return confirm('Delete this rule?');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4">No rules yet. Create the first rule from the form on the left.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </article>
+</section>
+{{template "footer" .}}
+{{end}}

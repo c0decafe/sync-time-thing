@@ -1,0 +1,32 @@
+{{define "header"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>SyncTimeThing</h1>
+    {{if .Username}}
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/settings">Settings</a>
+      <a href="/rules">Rules</a>
+      <form action="/logout" method="post" class="inline-form"><button type="submit">Logout</button></form>
+    </nav>
+    {{end}}
+  </header>
+  <main class="content">
+    {{if .Notice}}<div class="alert notice">{{.Notice}}</div>{{end}}
+    {{if .Error}}<div class="alert error">{{.Error}}</div>{{end}}
+    {{if .ConnectionError}}<div class="alert error">{{.ConnectionError}}</div>{{end}}
+{{end}}
+
+{{define "footer"}}
+  </main>
+</body>
+</html>
+{{end}}
