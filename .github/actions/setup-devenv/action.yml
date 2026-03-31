@@ -1,0 +1,27 @@
+name: Setup Nix and devenv
+description: Install Nix, enable the Nix binary cache, and install the devenv CLI
+
+inputs:
+  github-token:
+    description: GitHub token used by the Nix installer action
+    required: true
+  devenv-version:
+    description: devenv release tag to install, for example v2.0.6
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31.10.3
+      with:
+        github_access_token: ${{ inputs.github-token }}
+
+    - name: Enable Nix binary cache
+      uses: DeterminateSystems/magic-nix-cache-action@v13
+
+    - name: Install devenv
+      shell: bash
+      run: |
+        set -euo pipefail
+        nix profile install --accept-flake-config "github:cachix/devenv/${{ inputs.devenv-version }}"
