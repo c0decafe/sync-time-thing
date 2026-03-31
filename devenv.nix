@@ -100,8 +100,6 @@ in {
     syncthing
   ];
 
-  languages.go.enable = true;
-
   env = {
     SYNCTIMETHING_LISTEN_ADDR = lib.mkDefault ":8080";
     SYNCTIMETHING_DATA_DIR = lib.mkDefault "${projectRoot}/.devenv/state/data";
