@@ -16,6 +16,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     name: Run devenv test
