@@ -95,8 +95,6 @@ in {
     curl
     git
     go
-    gopls
-    gotools
     jq
     sqlite
     syncthing
